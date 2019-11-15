@@ -1,46 +1,24 @@
 #=============================================================================#
-# import external libraries                                                   #
+# import from external libraries                                              #
 #=============================================================================#
 
 import os
-import pandas as pd
-import pickle
 
 #=============================================================================#
-# import internal modules                                                     #
+# import from djak suite                                                      #
 #=============================================================================#
 
-#-----------------------------------------------------------------------------#
+#=============================================================================#
+# import from internal modules                                                #
+#=============================================================================#
 
-def pandas_load(fromFile, **kwargs):
-    return pd.read_csv(fromFile, **kwargs)
-
-def pandas_save(df, toFile, **kwargs):
-    df.to_csv(toFile, **kwargs)
-
-def pickle_load(fromFile):
-    with open(fromFile, 'rb') as f:
-        pkl = pickle.load(f)
-    return pkl
-
-def pickle_save(pkl, toFile):
-    with open(toFile, "wb") as f:
-        pickle.dump(pkl, f)
-
-def write_class_template(filename):
-    """writes a class template file to a given filename (no extention)."""
-    # write basic file template
-    write_file_template(filename)
-    # write class specific template
-    f = open(f"{filename}.py", 'a')
-    f.write(f"""\
+from files import pandas_load, pandas_save, pickle_load, pickle_save
 
 #=============================================================================#
 # class definition                                                            #
 #=============================================================================#
 
-from djak.djakBase import djakBase
-{filename}(djakBase):
+djakBase:
 
     #=========================================================================#
     # constructor                                                             #
@@ -52,6 +30,29 @@ from djak.djakBase import djakBase
     #=========================================================================#
     # public - defined                                                        #
     #=========================================================================#
+
+    def load_file(self, *args):
+        if len(args) == 1: self.__name__update__(args[0])
+        df = pandas_load(f"{self.filename}.csv")
+
+    def load_state(self, *args):
+        if len(args) == 1: self.__name__update__(args[0])
+        pkl = pickle_load(f"{self.filename}.pkl")
+        self.__dict__.update(pkl)
+
+    def save_file(self, *args, **kwargs):
+        if len(args) == 1:
+            saveName = args[0]
+        else:
+            saveName = self.filename
+        pandas_save(self.data, f"{saveName}.csv", **kwargs)
+
+    def save_state(self):
+        if len(args) == 1:
+            saveName = args[0]
+        else:
+            saveName = self.filename
+        pickle_save(self.__dict__, f"{saveName}.pkl")
 
     #=========================================================================#
     # public - declared only                                                  #
@@ -68,23 +69,7 @@ from djak.djakBase import djakBase
     #=========================================================================#
     # "private" - defined                                                     #
     #=========================================================================#
-""")
-    f.close()
 
-def write_file_template(filename):
-    """writes a standard python template to a given filename (no extention)."""
-    f = open(f"{filename}.py", 'w')
-    f.write("""\
-#=============================================================================#
-# import from external libraries                                              #
-#=============================================================================#
-
-#=============================================================================#
-# import from djak suite                                                      #
-#=============================================================================#
-
-#=============================================================================#
-# import from internal modules                                                #
-#=============================================================================#
-""")
-    f.close()
+    def __name__update__(self, name):
+        self.name = name
+        self.filename = os.path.abspath(name)
